@@ -215,3 +215,6 @@ export class GeminiService {
         return list[Math.floor(Math.random() * list.length)];
     }
 }
+
+export const geminiService = new GeminiService(import.meta.env.VITE_GEMINI_API_KEY || '');
+

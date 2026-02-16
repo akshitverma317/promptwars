@@ -1,4 +1,5 @@
 import type { Point, Direction, GameState, SnakeSegment, Challenge } from './types';
+import { GAME_CONFIG, POWER_UP_TYPES, DEATH_REASONS } from '../constants/gameConfig';
 
 export class SnakeGame {
     snake: SnakeSegment[];
@@ -10,7 +11,7 @@ export class SnakeGame {
     activeChallenge: Challenge | null;
     gridSize: number;
     boardSize: { width: number; height: number };
-    gameSpeed: number; // ms per move
+    gameSpeed: number = GAME_CONFIG.INITIAL_GAME_SPEED; // ms per move
     lastMoveTime: number;
     activePowerUp: string | null = null;
     powerUpEndTime: number = 0;
@@ -23,24 +24,42 @@ export class SnakeGame {
     bossDirection: Direction = 'LEFT';
     bossActive: boolean = false;
     lastBossMoveTime: number = 0;
+    deathReason: string | null = null;
 
 
 
-    constructor(width: number, height: number, gridSize: number = 20) {
+    constructor(width: number, height: number, gridSize: number = GAME_CONFIG.DEFAULT_GRID_SIZE) {
         this.gridSize = gridSize;
         this.boardSize = { width, height };
-        this.snake = [{ x: 5 * gridSize, y: 5 * gridSize }];
+        this.snake = [{ x: 100, y: 100 }];
         this.direction = 'RIGHT';
         this.nextDirection = 'RIGHT';
         this.activeChallenge = null;
         this.score = 0;
         this.gameState = 'MENU';
-        this.gameSpeed = 100;
+        this.gameSpeed = GAME_CONFIG.INITIAL_GAME_SPEED;
         this.lastMoveTime = 0;
-        this.food = this.spawnFood();
         this.food = this.spawnFood();
         this.powerUpItem = null;
         this.bossSnake = [];
+    }
+
+    start() {
+        this.snake = [{ x: 100, y: 100 }];
+        this.direction = 'RIGHT';
+        this.nextDirection = 'RIGHT';
+        this.score = 0;
+        this.gameState = 'PLAYING';
+        this.gameSpeed = GAME_CONFIG.INITIAL_GAME_SPEED;
+        this.food = this.spawnFood();
+        this.powerUpItem = null;
+        this.activePowerUp = null;
+        this.bossActive = false;
+        this.bossSnake = [];
+        this.closeCalls = 0;
+        this.deathReason = null;
+        this.lastMoveTime = performance.now();
+        this.lastCloseCallTime = -GAME_CONFIG.CLOSE_CALL_DEBOUNCE_MS; // Allow first call immediately
     }
 
     spawnBoss() {
@@ -93,18 +112,17 @@ export class SnakeGame {
 
         // Check collision with player
         if (this.snake.some(s => s.x === head.x && s.y === head.y)) {
-            // Player hit boss head -> Mutually assured destruction? 
-            // Or just player dies.
-            this.handleDeath();
+            // Player hit boss head
+            this.handleDeath(DEATH_REASONS.BOSS);
         }
     }
 
     spawnPowerUp() {
         if (this.powerUpItem) return;
-        // 5% chance to spawn if none exists
-        if (Math.random() > 0.005) return;
+        // Check spawn chance from config
+        if (Math.random() > GAME_CONFIG.POWERUP_SPAWN_CHANCE) return;
 
-        const types = ['SPEED_BOOST', 'SLOW_MOTION', 'GHOST_MODE', 'MAGNET'];
+        const types = Object.values(POWER_UP_TYPES);
         const type = types[Math.floor(Math.random() * types.length)];
 
         const cols = Math.floor(this.boardSize.width / this.gridSize);
@@ -136,8 +154,8 @@ export class SnakeGame {
         });
 
         if (nearWall || nearSelf) {
-            // Debounce
-            if (performance.now() - this.lastCloseCallTime > 2000) {
+            // Debounce using configured interval
+            if (performance.now() - this.lastCloseCallTime > GAME_CONFIG.CLOSE_CALL_DEBOUNCE_MS) {
                 this.closeCalls++;
                 this.lastCloseCallTime = performance.now();
                 return true;
@@ -210,13 +228,13 @@ export class SnakeGame {
 
         // Wall collision
         if (head.x < 0 || head.x >= this.boardSize.width || head.y < 0 || head.y >= this.boardSize.height) {
-            this.handleDeath();
+            this.handleDeath(DEATH_REASONS.WALL);
             return;
         }
 
         // Self collision
         if (this.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
-            this.handleDeath();
+            this.handleDeath(DEATH_REASONS.SELF);
             return;
         }
 
@@ -224,11 +242,11 @@ export class SnakeGame {
 
         // Check food
         if (head.x === this.food.x && head.y === this.food.y) {
-            this.score += 10;
+            this.score += GAME_CONFIG.POINTS_PER_FOOD;
             this.food = this.spawnFood();
             // Increase speed if not in SLOW_MOTION
-            if (this.activePowerUp !== 'SLOW_MOTION') {
-                this.gameSpeed = Math.max(50, this.gameSpeed - 1);
+            if (this.activePowerUp !== POWER_UP_TYPES.SLOW_MOTION) {
+                this.gameSpeed = Math.max(GAME_CONFIG.MIN_GAME_SPEED, this.gameSpeed - GAME_CONFIG.SPEED_INCREMENT_PER_FOOD);
             }
 
             if (this.activeChallenge && this.activeChallenge.goalType === 'EAT_TARGET') {
@@ -246,9 +264,9 @@ export class SnakeGame {
             if (head.x === this.powerUpItem.x && head.y === this.powerUpItem.y) {
                 this.activatePowerUp(this.powerUpItem.type);
                 this.powerUpItem = null;
-                this.score += 50;
-            } else if (currTime - this.powerUpItem.spawnTime > 8000) {
-                // Despawn after 8s
+                this.score += GAME_CONFIG.POINTS_PER_POWERUP;
+            } else if (currTime - this.powerUpItem.spawnTime > GAME_CONFIG.POWERUP_DESPAWN_TIME_MS) {
+                // Despawn after timeout
                 this.powerUpItem = null;
             }
         } else {
@@ -269,9 +287,10 @@ export class SnakeGame {
         }
     }
 
-    handleDeath() {
-        if (this.activePowerUp === 'GHOST_MODE') return; // Immortal
+    handleDeath(reason: string = DEATH_REASONS.WALL) {
+        if (this.activePowerUp === POWER_UP_TYPES.GHOST_MODE) return; // Immortal
 
+        this.deathReason = reason;
         this.gameState = 'GAME_OVER';
         if (this.activeChallenge) {
             this.completeChallenge(false);
@@ -294,34 +313,20 @@ export class SnakeGame {
 
     activatePowerUp(type: string) {
         this.activePowerUp = type;
-        this.powerUpEndTime = performance.now() + 10000; // 10 seconds duration
+        this.powerUpEndTime = performance.now() + GAME_CONFIG.POWERUP_DURATION_MS;
 
-        if (type === 'SLOW_MOTION') {
-            this.gameSpeed = 150;
-        } else if (type === 'SPEED_BOOST') {
-            this.gameSpeed = 50;
+        if (type === POWER_UP_TYPES.SLOW_MOTION) {
+            this.gameSpeed = GAME_CONFIG.SLOW_MOTION_SPEED;
+        } else if (type === POWER_UP_TYPES.SPEED_BOOST) {
+            this.gameSpeed = GAME_CONFIG.SPEED_BOOST_SPEED;
         }
     }
 
     deactivatePowerUp() {
-        if (this.activePowerUp === 'SLOW_MOTION') {
-            // Reset speed logic based on score or just default
-            // A simple reset:
-            this.gameSpeed = Math.max(50, 100 - Math.floor(this.score / 100));
+        if (this.activePowerUp === POWER_UP_TYPES.SLOW_MOTION) {
+            // Reset speed based on score threshold
+            this.gameSpeed = Math.max(GAME_CONFIG.MIN_GAME_SPEED, GAME_CONFIG.INITIAL_GAME_SPEED - Math.floor(this.score / 100));
         }
         this.activePowerUp = null;
-    }
-
-    start() {
-        this.gameState = 'PLAYING';
-        this.score = 0;
-        this.snake = [{ x: 5 * this.gridSize, y: 5 * this.gridSize }];
-        this.direction = 'RIGHT';
-        this.nextDirection = 'RIGHT';
-        this.food = this.spawnFood();
-        this.lastMoveTime = performance.now();
-        this.activeChallenge = null;
-        this.activePowerUp = null;
-        this.gameSpeed = 100;
     }
 }

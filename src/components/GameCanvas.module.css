@@ -116,3 +116,90 @@
         opacity: 1;
     }
 }
+
+/* Keyboard Help Button */
+.helpButton {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: var(--color-text);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.helpButton:hover,
+.helpButton:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+}
+
+/* Keyboard Shortcuts Dialog */
+.keyboardHelp {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 280px;
+    z-index: 15;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.keyboardHelp h3 {
+    margin: 0 0 15px 0;
+    color: var(--color-text);
+    font-size: 1.2rem;
+}
+
+.keyboardHelp ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+}
+
+.keyboardHelp li {
+    padding: 8px 0;
+    color: var(--color-text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.keyboardHelp kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--color-text);
+}
+
+.keyboardHelp button {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.keyboardHelp button:hover,
+.keyboardHelp button:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}

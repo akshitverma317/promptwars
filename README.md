@@ -1,73 +1,42 @@
-# React + TypeScript + Vite
+# AI Snake - Dynamic Challenge Edition
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Vertical
+**Interactive Entertainment / Gaming**
 
-Currently, two official plugins are available:
+## Approach and Logic
+This project reimagines the classic Snake game by integrating a "Dungeon Master" AI powered by **Google Gemini**. Instead of a static difficulty curve, the game uses Generative AI to create dynamic, context-aware challenges and trivia, making every session unique.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Core Architecture
+1.  **Frontend**: Built with **React**, **TypeScript**, and **Vite** for a performant, type-safe development environment.
+2.  **Game Engine**: A custom `SnakeGame` class (vanilla TypeScript) manages the game loop, changing state, collision detection, and rendering to an HTML5 Canvas. This ensures smooth 60fps performance independent of React's render cycle.
+3.  **AI Layer (Google Gemini)**: The `GeminiService` acts as the bridge between the game state and Google's LLM. It prompts the model to generate:
+    -   **Dynamic Challenges**: Unique gameplay conditions (e.g., "Eat 5 apples in 10 seconds due to a sudden hunger pang").
+    -   **Thematic Trivia**: Fun facts related to the current visual theme (Neon, Jungle, Volcanic) displayed during pauses or game over screens.
 
-## React Compiler
+### Logic Flow
+1.  **Initialization**: The game starts in a "Menu" state. The `GeminiService` checks for an API key.
+2.  **Gameplay Loop**: The active challenge is monitored (e.g., `survive_time`, `eat_target`).
+3.  **AI Intervention**: periodically, or upon specific events (like reaching a score threshold), the game requests a new challenge from Gemini.
+4.  **Fallback System**: Robust error handling ensures that if the AI service is unreachable or rate-limited, the game seamlessly switches to a pre-defined "Mock Mode" so functionality is never lost.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## How the Solution Works
+1.  **Clone & Setup**:
+    -   Clone the repository.
+    -   Install dependencies: `npm install`.
+    -   Set `VITE_GEMINI_API_KEY` in your `.env` file.
+2.  **Play**:
+    -   Run `npm run dev`.
+    -   Control the snake with Arrow Keys or WASD.
+    -   Watch for "Mission Updates" at the top of the HUD.
+3.  **AI Features**:
+    -   **Smart Challenges**: The AI analyzes the game context (e.g., "User is playing cautiously") and generates a challenge to disrupt it (e.g., "Speed Up!").
+    -   **Flavor Text**: Game-over screens act as a moment of learning with AI-generated trivia.
 
-## Expanding the ESLint configuration
+## Google Services Integration
+-   **Google Gemini (Generative AI)**: Used via the Google Gen AI SDK (`@google/generative-ai`) to generate JSON-structured game data and text.
+    -   *Model*: `gemini-1.5-flash` (optimized for speed/latency).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Assumptions
+-   The user has a valid Google Cloud API Key with access to Gemini.
+-   The user is running the application in a modern web browser interacting with the HTML5 Canvas API.
+-   A stable internet connection is available for the full AI experience (though offline play is supported via mocks).

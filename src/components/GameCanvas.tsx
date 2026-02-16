@@ -243,6 +243,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
                     <div className={styles.overlay}>
                         <h1 className={styles.title}>SNAKE 2026</h1>
                         <p className={styles.subtitle}>Press SPACE to Start</p>
+
+                        <div className={styles.apiKeyContainer}>
+                            <input
+                                type="password"
+                                placeholder="Enter Gemini API Key (Optional)"
+                                className={styles.apiKeyInput}
+                                onChange={(e) => {
+                                    localStorage.setItem('gemini_api_key', e.target.value);
+                                    // simpler logic: reload to apply for now, or just save
+                                }}
+                                defaultValue={localStorage.getItem('gemini_api_key') || ''}
+                            />
+                            <p className={styles.hint}>Leave empty for Mock Mode</p>
+                        </div>
+
                         <div className={styles.controls}>
                             <p>⬆️⬇️⬅️➡️ to Move</p>
                             <p>'T' to Switch Theme</p>

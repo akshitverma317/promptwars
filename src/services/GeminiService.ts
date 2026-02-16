@@ -1,28 +1,85 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { Challenge } from '../game-engine/types';
 
 export class GeminiService {
-    private mockMode: boolean;
+    private genAI: GoogleGenerativeAI | null = null;
+    private model: any = null;
+    private mockMode: boolean = true;
 
-    constructor(_apiKey: string = '') {
-        this.mockMode = true;
+    constructor(apiKey: string = '') {
+        if (apiKey && apiKey.startsWith('AI')) {
+            this.genAI = new GoogleGenerativeAI(apiKey);
+            this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+            this.mockMode = false;
+        } else {
+            this.mockMode = true;
+        }
     }
 
-    async generateChallenge(_gameState: any): Promise<Challenge> {
+    async generateChallenge(gameState: any): Promise<Challenge> {
         if (this.mockMode) {
             return this.generateMockChallenge();
         }
-        return this.generateMockChallenge();
+
+        try {
+            const prompt = `
+        You are a creative game designer for a modern AI-powered Snake game (2026 edition).
+        Generate a unique, funny, short-term challenge that the player must complete.
+        
+        GAME CONTEXT:
+        Score: ${gameState.score}
+        Theme: ${document.documentElement.getAttribute('data-theme') || 'neon'}
+        
+        OUTPUT JSON ONLY:
+        {
+          "challengeTitle": "string (Short & Punchy)",
+          "description": "string (Humorous, 1 sentence)",
+          "goalType": "SURVIVE | EAT_TARGET | SCORE_RUSH",
+          "targetValue": number,
+          "timeLimitSeconds": number (10-30),
+          "failureCondition": "DIE | TIME_UP"
+        }
+        `;
+
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+
+            // Clean markdown if present
+            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const data = JSON.parse(jsonStr);
+
+            return {
+                id: crypto.randomUUID(),
+                active: true,
+                progress: 0,
+                startTime: Date.now(),
+                ...data,
+                reward: { points: 500 } // Default reward for AI challenges
+            } as Challenge;
+
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            return this.generateMockChallenge(); // Fallback
+        }
     }
 
     async generateTrivia(theme: string): Promise<string> {
         if (this.mockMode) {
             return this.generateMockTrivia(theme);
         }
-        return this.generateMockTrivia(theme);
+
+        try {
+            const prompt = `Generate 1 short, fascinating, or funny trivia fact about '${theme}' logic, history, or aesthetics. Max 1 sentence.`;
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            return response.text().trim();
+        } catch (error) {
+            return this.generateMockTrivia(theme);
+        }
     }
 
     private generateMockChallenge(): Challenge {
-        // ... same as before
         const challenges: Partial<Challenge>[] = [
             {
                 title: "Speed Freak",
@@ -42,28 +99,9 @@ export class GeminiService {
                 reward: { points: 300 },
                 failureCondition: "TIME_UP"
             },
-            {
-                title: "Claustrophobia",
-                description: "The walls are looking at you funny... Don't touch them for 20s!",
-                goalType: "SURVIVE",
-                targetValue: 20,
-                timeLimitSeconds: 20,
-                reward: { points: 400 },
-                failureCondition: "DIE"
-            },
-            {
-                title: "Diet Starts Tomorrow",
-                description: "Eat 3 pellets. No excuses! (15s)",
-                goalType: "EAT_TARGET",
-                targetValue: 3,
-                timeLimitSeconds: 15,
-                reward: { points: 250 },
-                failureCondition: "TIME_UP"
-            }
+            // ... more mocks
         ];
-
         const template = challenges[Math.floor(Math.random() * challenges.length)];
-
         return {
             id: crypto.randomUUID(),
             active: true,
@@ -75,33 +113,11 @@ export class GeminiService {
 
     private generateMockTrivia(theme: string): string {
         const facts: Record<string, string[]> = {
-            'neon': [
-                "Did you know? The first cyberpunk story was written in 1980 by Bruce Bethke.",
-                "Neon lights were invented in 1910 by Georges Claude.",
-                "The term 'Cyberspace' was coined by William Gibson in 'Neuromancer'.",
-                "In 2026, AI is expected to write 90% of code. (Wait, that's me!)",
-                "Blade Runner is set in 2019. We are already in the future!",
-                "Synthwave music mimics 80s soundtracks but is a modern genre."
-            ],
-            'jungle': [
-                "The Amazon Rainforest produces 20% of the world's oxygen.",
-                "Snakes can't blink! They have no eyelids.",
-                "There are over 3,000 species of snakes in the world.",
-                "Some snakes can fly (glide) up to 100 meters!",
-                "The Titanoboa was a prehistoric snake 42 feet long.",
-                "Jungle rot is real... but hopefully not in this game."
-            ],
-            'lava': [
-                "Lava can reach temperatures of 1,200°C (2,200°F).",
-                "Obsidian is volcanic glass formed by rapidly cooling lava.",
-                "There are over 1,500 active volcanoes on Earth.",
-                "The floor is lava! (A classic childhood game).",
-                "Volcanic ash is good for soil fertility.",
-                "Magma is lava before it erupts."
-            ]
+            'neon': ["The first cyberpunk story was written in 1980.", "Neon lights were invented in 1910."],
+            'jungle': ["The Amazon Rainforest produces 20% of Earth's oxygen.", "Snakes can't blink!"],
+            'lava': ["Lava can reach 1,200°C.", "Obsidian is volcanic glass."]
         };
-
-        const themeFacts = facts[theme] || facts['neon'];
-        return themeFacts[Math.floor(Math.random() * themeFacts.length)];
+        const list = facts[theme] || facts['neon'];
+        return list[Math.floor(Math.random() * list.length)];
     }
 }

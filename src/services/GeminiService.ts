@@ -79,6 +79,35 @@ export class GeminiService {
         }
     }
 
+    async generateCommentary(event: string, score: number): Promise<string> {
+        if (this.mockMode) {
+            const comments = [
+                "Whoa! Too close!",
+                "Slippery snake!",
+                "Nice moves!",
+                "Living on the edge!",
+                "Pixel perfect!"
+            ];
+            return comments[Math.floor(Math.random() * comments.length)];
+        }
+
+        try {
+            const prompt = `
+            You are a hype-man commentator for a Snake game.
+            The player just experienced: "${event}".
+            Current Score: ${score}.
+            
+            Generate a 3-5 word EXCITED reaction.
+            Examples: "Unbelievable dodge!", "Clutch move!", "Ice in your veins!"
+            `;
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            return response.text().trim().replace(/"/g, '');
+        } catch (error) {
+            return "EPIC!";
+        }
+    }
+
     private generateMockChallenge(): Challenge {
         const challenges: Partial<Challenge>[] = [
             {

@@ -107,6 +107,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
             const prevScore = game.score;
             game.update(performance.now());
 
+            // Particle Trail for Speed
+            if (activePowerUp === 'SPEED_BOOST' || game.gameSpeed < 80) {
+                const head = game.snake[0];
+                // Emit fewer particles to avoid clutter
+                if (Math.random() < 0.5) {
+                    particleSystem.current.emit(head.x + game.gridSize / 2, head.y + game.gridSize / 2, '#0ff', 1);
+                }
+            }
+
+            // Check for Close Calls
+            const head = game.snake[0];
+            if (game.checkCloseCall(head)) {
+                (async () => {
+                    const comment = await geminiService.current.generateCommentary("Close Call", game.score);
+                    feedbackSystem.current.spawn(width / 2, height / 2 - 50, comment, "#ff0");
+                })();
+            }
+
             // Check if score increased
             if (game.score > prevScore) {
                 const head = game.snake[0];
@@ -193,21 +211,121 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         if (gameState === 'PLAYING' || gameState === 'GAME_OVER') {
             // Draw Snake
             game.snake.forEach((segment, index) => {
-                ctx.shadowBlur = index === 0 ? 15 : 10;
+                const isHead = index === 0;
+                const isTail = index === game.snake.length - 1;
+
+                const x = segment.x + gridSize / 2;
+                const y = segment.y + gridSize / 2;
+                // Taper the tail
+                const radius = isHead ? gridSize / 2 : (isTail ? (gridSize / 2) - 4 : (gridSize / 2) - 2);
+
+                ctx.shadowBlur = isHead ? 20 : 10;
                 ctx.shadowColor = colors.shadowS;
-                ctx.fillStyle = index === 0 ? colors.snakeHead : colors.snakeBody;
-                ctx.fillRect(segment.x + 1, segment.y + 1, gridSize - 2, gridSize - 2);
+                ctx.fillStyle = isHead ? colors.snakeHead : colors.snakeBody;
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw Eyes on Head
+                if (isHead) {
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#000'; // Eye color
+                    const eyeOffset = radius * 0.4;
+                    const eyeSize = radius * 0.25;
+
+                    let eyeX1, eyeY1, eyeX2, eyeY2;
+
+                    switch (game.direction) {
+                        case 'UP':
+                            eyeX1 = x - eyeOffset; eyeY1 = y - eyeOffset;
+                            eyeX2 = x + eyeOffset; eyeY2 = y - eyeOffset;
+                            break;
+                        case 'DOWN':
+                            eyeX1 = x - eyeOffset; eyeY1 = y + eyeOffset;
+                            eyeX2 = x + eyeOffset; eyeY2 = y + eyeOffset;
+                            break;
+                        case 'LEFT':
+                            eyeX1 = x - eyeOffset; eyeY1 = y - eyeOffset;
+                            eyeX2 = x - eyeOffset; eyeY2 = y + eyeOffset;
+                            break;
+                        case 'RIGHT':
+                            eyeX1 = x + eyeOffset; eyeY1 = y - eyeOffset;
+                            eyeX2 = x + eyeOffset; eyeY2 = y + eyeOffset;
+                            break;
+                    }
+
+                    if (eyeX1 !== undefined) {
+                        ctx.beginPath();
+                        ctx.arc(eyeX1, eyeY1, eyeSize, 0, Math.PI * 2);
+                        ctx.arc(eyeX2, eyeY2, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
             });
 
+            // Draw Boss Snake
+            if (game.bossActive) {
+                game.bossSnake.forEach((segment, index) => {
+                    const isHead = index === 0;
+
+                    ctx.shadowBlur = isHead ? 25 : 10;
+                    ctx.shadowColor = '#f00';
+                    ctx.fillStyle = isHead ? '#ff0000' : '#880000';
+
+                    // Draw jagged/square segments for "Evil" look
+                    ctx.fillRect(segment.x + 2, segment.y + 2, gridSize - 4, gridSize - 4);
+                });
+            }
+
             // Draw Food
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = colors.shadowF;
             ctx.fillStyle = colors.food;
             ctx.beginPath();
             const foodRadius = gridSize / 2 - 2;
-            ctx.arc(game.food.x + gridSize / 2, game.food.y + gridSize / 2, foodRadius, 0, Math.PI * 2);
+
+            // Pulsing effect for food
+            const pulse = Math.sin(performance.now() / 200) * 2;
+            ctx.arc(game.food.x + gridSize / 2, game.food.y + gridSize / 2, Math.max(0, foodRadius + pulse), 0, Math.PI * 2);
             ctx.fill();
+
+            // Food Inner Glow
+            ctx.fillStyle = '#fff';
             ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(game.food.x + gridSize / 2 - 2, game.food.y + gridSize / 2 - 2, foodRadius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw PowerUp
+            if (game.powerUpItem) {
+                const p = game.powerUpItem;
+                const px = p.x + gridSize / 2;
+                const py = p.y + gridSize / 2;
+
+                let pColor = '#fff';
+                let pText = '?';
+
+                switch (p.type) {
+                    case 'SPEED_BOOST': pColor = '#0ff'; pText = '⚡'; break;
+                    case 'SLOW_MOTION': pColor = '#0f0'; pText = '🐌'; break;
+                    case 'GHOST_MODE': pColor = '#aaa'; pText = '👻'; break;
+                    case 'MAGNET': pColor = '#f0f'; pText = '🧲'; break;
+                }
+
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = pColor;
+                ctx.fillStyle = pColor;
+                ctx.beginPath();
+                ctx.arc(px, py, gridSize / 2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(pText, px, py);
+            }
         }
 
         // Draw particles and feedback

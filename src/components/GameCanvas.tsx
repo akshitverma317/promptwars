@@ -32,6 +32,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
     const [activePowerUp, setActivePowerUp] = useState<string | null>(null);
     const [currentTheme, setCurrentTheme] = useState('neon');
     const [facts, setFacts] = useState<string[]>([]);
+    const [coachingTip, setCoachingTip] = useState<string>('');
 
     // Apply Theme
     useEffect(() => {
@@ -145,6 +146,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
                 const head = game.snake[0];
                 const phrase = DIE_PHRASES[Math.floor(Math.random() * DIE_PHRASES.length)];
                 feedbackSystem.current.spawn(head.x, head.y - 40, phrase, '#f00');
+
+                // Generate AI Coaching Tip
+                (async () => {
+                    const deathReason = head.x < 0 || head.x >= width || head.y < 0 || head.y >= height ? 'wall' : 'self';
+                    const tip = await geminiService.current.generatePostGameAnalysis(game.score, deathReason, game.closeCalls);
+                    setCoachingTip(tip);
+                })();
             }
             if (game.score !== score) {
                 setScore(game.score);
@@ -358,41 +366,53 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
                 {/* ChallengeOverlay removed - moved to sidebar */}
 
                 {gameState === 'MENU' && (
-                    <div className={styles.overlay}>
-                        <h1 className={styles.title}>SNAKE 2026</h1>
-                        <p className={styles.subtitle}>Press SPACE to Start</p>
+                    <div className={styles.overlay} role="dialog" aria-labelledby="game-title" aria-describedby="game-instructions">
+                        <h1 id="game-title" className={styles.title}>SNAKE 2026</h1>
+                        <p id="game-instructions" className={styles.subtitle}>Press SPACE to Start</p>
 
                         <div className={styles.apiKeyContainer}>
+                            <label htmlFor="api-key-input" className="sr-only">Gemini API Key</label>
                             <input
+                                id="api-key-input"
                                 type="password"
                                 placeholder="Enter Gemini API Key (Optional)"
                                 className={styles.apiKeyInput}
+                                aria-label="Gemini API Key for AI features"
                                 onChange={(e) => {
                                     localStorage.setItem('gemini_api_key', e.target.value);
-                                    // simpler logic: reload to apply for now, or just save
                                 }}
                                 defaultValue={localStorage.getItem('gemini_api_key') || ''}
                             />
-                            <p className={styles.hint}>Leave empty for Mock Mode</p>
+                            <p className={styles.hint} aria-live="polite">Leave empty for Mock Mode</p>
                         </div>
 
-                        <div className={styles.controls}>
-                            <p>⬆️⬇️⬅️➡️ to Move</p>
-                            <p>'T' to Switch Theme</p>
+                        <div className={styles.controls} role="list" aria-label="Game controls">
+                            <p role="listitem">⬆️⬇️⬅️➡️ to Move</p>
+                            <p role="listitem">'T' to Switch Theme</p>
                         </div>
                     </div>
                 )}
 
                 {gameState === 'GAME_OVER' && (
-                    <div className={styles.overlay}>
-                        <h1 className={styles.gameOver}>GAME OVER</h1>
+                    <div className={styles.overlay} role="dialog" aria-labelledby="game-over-title" aria-describedby="final-score">
+                        <h1 id="game-over-title" className={styles.gameOver}>GAME OVER</h1>
                         <div style={{ textAlign: 'center' }}>
                             <p className={styles.subtitle} style={{ fontSize: '1.2rem', color: '#aaa' }}>Did the wall jump out at you?</p>
-                            <p className={styles.score}>Score: {score}</p>
+                            <p id="final-score" className={styles.score} aria-live="assertive">Score: {score}</p>
+                            {coachingTip && (
+                                <p style={{ color: '#0ff', marginTop: '1rem', fontStyle: 'italic' }}>
+                                    🎯 {coachingTip}
+                                </p>
+                            )}
                         </div>
                         <p className={styles.subtitle}>Press SPACE to Retry</p>
                     </div>
                 )}
+            </div>
+
+            {/* Screen Reader Live Region for Game Events */}
+            <div aria-live="polite" aria-atomic="true" className="sr-only">
+                {gameState === 'PLAYING' && `Score: ${score}. ${activePowerUp ? `Active power-up: ${activePowerUp}` : ''}`}
             </div>
 
             <LearningPanel facts={facts} theme={currentTheme} activeChallenge={activeChallenge} />

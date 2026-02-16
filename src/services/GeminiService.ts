@@ -108,6 +108,71 @@ export class GeminiService {
         }
     }
 
+    /**
+     * Generate post-game coaching analysis based on player performance
+     * @param score Final score achieved
+     * @param deathReason How the player died (wall, self, boss)
+     * @param closeCalls Number of near-misses during the game
+     * @returns Personalized coaching tip
+     */
+    async generatePostGameAnalysis(score: number, deathReason: string, closeCalls: number): Promise<string> {
+        if (this.mockMode) {
+            const tips = [
+                "Try using the walls as guides, not obstacles!",
+                "Pro tip: Plan your path 3 moves ahead.",
+                "Close calls are exciting, but survival is key!",
+                "The Boss Snake is predictable - use that to your advantage."
+            ];
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
+        try {
+            const prompt = `
+            You are a professional Snake game coach. Analyze this game session:
+            - Final Score: ${score}
+            - Death Cause: ${deathReason}
+            - Close Calls: ${closeCalls}
+            
+            Provide ONE actionable coaching tip (max 15 words) to help them improve.
+            Be encouraging but specific.
+            `;
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            return response.text().trim();
+        } catch (error) {
+            return "Keep practicing - every game makes you better!";
+        }
+    }
+
+    /**
+     * AI-powered difficulty suggestion based on player skill
+     * @param avgScore Average score over recent games
+     * @param survivalTime Average survival time
+     * @returns Suggested game speed adjustment
+     */
+    async suggestDifficulty(avgScore: number, survivalTime: number): Promise<number> {
+        if (this.mockMode) {
+            return avgScore > 200 ? 80 : 100; // Faster if skilled
+        }
+
+        try {
+            const prompt = `
+            Analyze player skill:
+            - Average Score: ${avgScore}
+            - Avg Survival: ${survivalTime}s
+            
+            Suggest optimal game speed (50-150ms, lower=faster).
+            Output ONLY a number.
+            `;
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            const speed = parseInt(response.text().trim());
+            return isNaN(speed) ? 100 : Math.max(50, Math.min(150, speed));
+        } catch (error) {
+            return 100;
+        }
+    }
+
     private generateMockChallenge(): Challenge {
         const challenges: Partial<Challenge>[] = [
             {

@@ -1,0 +1,177 @@
+.container {
+    width: 320px;
+    height: 600px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    margin-left: 20px;
+    transition: all 0.3s ease;
+}
+
+.header {
+    padding: 15px;
+    margin: 0;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    color: var(--color-primary);
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.challengeSection {
+    background: rgba(0, 0, 0, 0.2);
+    padding-bottom: 10px;
+}
+
+.activeChallenge {
+    padding: 15px 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.noChallenge {
+    padding: 20px;
+    text-align: center;
+    color: var(--color-text-dim);
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.challengeTitle {
+    margin: 0 0 5px 0;
+    color: var(--color-accent);
+    font-size: 1.1em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.challengeDesc {
+    margin: 0 0 10px 0;
+    font-size: 0.85em;
+    color: var(--color-text);
+    line-height: 1.4;
+}
+
+.progressBar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--color-success);
+    transition: width 0.1s linear;
+}
+
+.statusRow {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.timer {
+    color: var(--color-danger);
+}
+
+.divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0;
+}
+
+.factList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    scroll-behavior: smooth;
+}
+
+.factItem {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid var(--color-primary);
+    padding: 12px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    animation: slideIn 0.3s ease-out;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.icon {
+    font-size: 1.2em;
+}
+
+.text {
+    margin: 0;
+    font-size: 0.85em;
+    color: var(--color-text-dim);
+    line-height: 1.4;
+}
+
+.emptyState {
+    color: var(--color-text-dim);
+    font-style: italic;
+    text-align: center;
+    margin-top: 40%;
+    padding: 20px;
+    opacity: 0.5;
+    font-size: 0.9em;
+}
+
+.footer {
+    padding: 10px 15px;
+    font-family: var(--font-mono);
+    font-size: 0.75em;
+    text-align: right;
+    color: var(--color-text-dim);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.factList::-webkit-scrollbar {
+    width: 4px;
+}
+
+.factList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.factList::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}

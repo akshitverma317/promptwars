@@ -1,0 +1,36 @@
+/* Neon (Cyberpunk) - Default */
+[data-theme='neon'] {
+    --color-bg: #050510;
+    --color-primary: #0ff;
+    --color-secondary: #f0f;
+    --color-accent: #ff0;
+    --color-danger: #f00;
+    --color-success: #0f0;
+    --color-text: #fff;
+    --color-grid: rgba(255, 255, 255, 0.05);
+}
+
+/* Jungle */
+[data-theme='jungle'] {
+    --color-bg: #0a1f0a;
+    --color-primary: #0f0;
+    --color-secondary: #ff0;
+    --color-accent: #f0f;
+    --color-danger: #f00;
+    --color-success: #0ff;
+    --color-text: #e0ffe0;
+    --color-grid: rgba(0, 255, 0, 0.1);
+}
+
+/* Lava */
+[data-theme='lava'] {
+    --color-bg: #1a0505;
+    --color-primary: #f50;
+    --color-secondary: #ff0;
+    --color-accent: #fff;
+    --color-danger: #00f;
+    /* Contrast */
+    --color-success: #0f0;
+    --color-text: #ffe0e0;
+    --color-grid: rgba(255, 80, 0, 0.1);
+}

@@ -1,0 +1,118 @@
+.wrapper {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+}
+
+.gameArea {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: var(--glass-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    background: #000;
+}
+
+.canvas {
+    display: block;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.4s ease-out;
+    z-index: 20;
+}
+
+.title {
+    font-size: 5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    color: var(--color-text);
+    letter-spacing: -2px;
+    background: linear-gradient(to right, #fff, #aaa);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    text-align: center;
+}
+
+.controls p {
+    color: var(--color-text-dim);
+    font-size: 0.9em;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gameOver {
+    font-size: 4rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: var(--color-danger);
+    letter-spacing: -1px;
+}
+
+.score {
+    font-size: 2.5rem;
+    font-family: var(--font-mono);
+    margin-bottom: 3rem;
+    color: var(--color-text);
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
